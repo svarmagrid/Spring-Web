@@ -1,0 +1,548 @@
+openapi: 3.0.0
+info:
+  title: AI Upskilling & Recommendation service API
+  version: 1.0.0
+  contact:
+    name: Satish
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Recommendations
+  - name: Skill Gap Analysis
+  - name: Learning Paths
+  - name: Analytics
+  - name: Tracking
+
+paths:
+  /recommendations/generate:
+    post:
+      tags:
+        - Recommendations
+      summary: generate ai learning recommendations
+      description: generate ai-based learning recommendations for an employee
+      operationId: generateRecommendations
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+
+      responses:
+        '201':
+          description: Recommendations created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Get all recommendations
+      description: Returns paginated recommendation list
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/DirectionParam'
+
+        - name: employeeId
+          in: query
+          schema:
+            type: string
+
+        - name: skill
+          in: query
+          schema:
+            type: string
+
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - IN_PROGRESS
+              - COMPLETED
+      responses:
+        '200':
+          description: Recommendation list fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecommendationResponse'
+
+
+  /recommendations/{employeeId}:
+    get:
+      tags:
+        - Recommendations
+      summary: get recommendations by employee Id
+      parameters:
+        - name: employeeId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee recommendations fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recommendations/{recommendationId}/refresh:
+    put:
+      tags:
+        - Recommendations
+      summary: Refresh recommendations
+      parameters:
+        - name: recommendationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recommendations refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
+  /skill-gap/{employeeId}:
+    get:
+      tags:
+        - Skill Gap Analysis
+      summary: Analyze employee skills
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Skill gap analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillGapResponse'
+
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /learning-paths:
+    get:
+      tags:
+        - Learning Paths
+      summary: Get Learning paths
+      description: Return learning paths with pagination and filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/DirectionParam'
+
+        - name: skill
+          in: query
+          schema:
+            type: string
+
+        - name: provider
+          in: query
+          schema:
+            type: string
+
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum:
+              - BEGINNER
+              - INTERMEDIATE
+              - ADVANCED
+
+      responses:
+        '200':
+          description: Recommendation list fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLearningPathResponse'
+
+  /learninng-paths/{id}:
+    get:
+      tags:
+        - Learning Paths
+      summary: Get learning path by Id
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+
+      responses:
+        '200':
+          description: Learning path fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+
+  /tracking/recommendations/{recommendationId}/click:
+    post:
+      tags:
+        - Tracking
+      summary: Track recommendation click
+      parameters:
+        - name: recommendationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Click tracked successfully
+
+  /tracking/recommendations/{recommendationId}/progress:
+    put:
+      tags:
+        - Tracking
+      summary: update learning progress
+      parameters:
+        - name: recommendationId
+          required: true
+          in: path
+          schema:
+            type: string
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgressUpdateRequest'
+
+      responses:
+        '200':
+          description: Progress updated successfully
+
+  /analytics/recommendations:
+    get:
+      tags:
+        - Analytics
+      summary: get recommendation analytics
+      parameters:
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Analytics fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+
+
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+
+    PageParam:
+      name: page
+      in: query
+      description: Page number
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+    SizeParam:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        default: 10
+        minimum: 1
+        maximum: 100
+
+    SortByParam:
+      name: sortBy
+      in: query
+      description: Field to sort by
+      schema:
+        type: string
+        default: createdAt
+
+    DirectionParam:
+      name: direction
+      in: query
+      description: Sort direction
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+        default: desc
+
+  schemas:
+    RecommendationRequest:
+      type: object
+      required:
+        - employeeId
+      properties:
+        employeeId:
+          type: string
+          example: EMP1001
+
+    RecommendationResponse:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        employeeName:
+          type: string
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningRecommendation'
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+
+        status:
+          type: integer
+
+        error:
+          type: string
+
+        message:
+          type: string
+
+        path:
+          type: string
+
+    LearningRecommendation:
+      type: object
+      properties:
+        recommendationId:
+          type: string
+
+        skill:
+          type: string
+
+        currentLevel:
+          type: string
+
+        targetLevel:
+          type: string
+
+        priority:
+          type: string
+          enum:
+            - HIGH
+            - MEDIUM
+            - LOW
+
+        estimatedCompletionDays:
+          type: integer
+
+        learningPath:
+          $ref: '#/components/schemas/LearningPath'
+
+    LearningPath:
+      type: object
+      properties:
+        id:
+          type: string
+
+        title:
+          type: string
+
+        provider:
+          type: string
+
+        url:
+          type: string
+          format: uri
+
+        durationHours:
+          type: integer
+
+        level:
+          type: string
+          enum:
+            - BEGINNER
+            - INTERMEDIATE
+            - ADVANCED
+
+        rating:
+          type: number
+          format: double
+
+        tags:
+          type: array
+          items:
+            type: string
+
+    SkillGapResponse:
+      type: object
+      properties:
+        employeeId:
+          type: string
+
+        missingSkills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillGap'
+
+    SkillGap:
+      type: object
+      properties:
+        skill:
+          type: string
+
+        requiredLevel:
+          type: string
+
+        currentLevel:
+          type: string
+
+        gapPercentage:
+          type: integer
+
+    ProgressUpdateRequest:
+      type: object
+      required:
+          - progressPercentage
+      properties:
+        progressPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+        status:
+          type: string
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - COMPLETED
+
+    AnalyticsResponse:
+      type: object
+      properties:
+        totalRecommendations:
+          type: integer
+
+        completedRecommendations:
+          type: integer
+
+        activeUsers:
+          type: integer
+
+        averageCompletionRate:
+          type: number
+          format: double
+    PaginatedRecommendationResponse:
+      type: object
+      properties:
+          content:
+            type: array
+            items:
+              $ref: '#/components/schemas/LearningRecommendation'
+
+          page:
+            type: integer
+
+          size:
+            type: integer
+
+          totalElements:
+            type: integer
+
+          totalPages:
+            type: integer
+
+          last:
+            type: boolean
+
+    PaginatedLearningPathResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningPath'
+
+        page:
+          type: integer
+
+        size:
+          type: integer
+
+        totalElements:
+          type: integer
+
+        totalPages:
+          type: integer
+
+        last:
+          type: boolean
